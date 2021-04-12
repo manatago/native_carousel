@@ -1,114 +1,218 @@
-class NativeCarousel{
-    constructor(id,height=300){
-        var this_obj = this;
-        //div要素を取得する
-        this.carousel = document.getElementById(id);
+class NativeSlideStyle{
+    constructor(id,args=new Object){
+        let this_obj = this;
+        //対象の要素を取得する
+        this.carousel=document.getElementById(id);
         //ul要素を取得する
         this.ul = this.carousel.children[0];
-        this.left_now=0;
-        this.direction='';
-        //ページ番号
-        this.page=0;
-        //次のページに移動するかどうか
-        this.pageChange=false;
-        //次のページに移動する際の割合
-        this.pageChangeRatio=0.1;
-
-        //li要素を取得する
+        //li要素の一覧を取得する
         this.lis = this.ul.children;
-        console.log(this.lis);
+        //現在のページを定義
+        this.page = 0;
+        //マウスをクリックしているかどうか
+        this.mouseOn=false;
 
-        //高さを取得
-        this.height=height;
+        
+        //基本パラメーターを設定する
+        this.basicParameter();
+        //受け取ったパラメーターがあれば設定する
+        this.setObjectParams(args);
+
+        //スタートイベント
+        this.carousel.addEventListener('touchstart',function(e){
+            this_obj.startEvent(e);
+        })
+        this.carousel.addEventListener('mousedown',function(e){
+            this_obj.startEvent(e);
+            this.mouseOn=true;
+        })
+
+        //終了イベント
+        this.carousel.addEventListener('touchend',function(e){
+            this_obj.endEvent(e);
+        })
+        this.carousel.addEventListener('mouseup',function(e){
+            this_obj.endEvent(e);
+            this.mouseOn=false;
+        })
+        
+        //移動イベント
+        this.carousel.addEventListener('touchmove',function(e){
+            this_obj.moveEvent(e);
+        })
+        this.carousel.addEventListener('mousemove',function(e){
+            if(this.mouseOn===true){
+                this_obj.moveEvent(e);
+            }
+        })
+
+
+        //スタイルを設定する
         this.setStyle();
-
         window.addEventListener('resize',function(){
             this_obj.setStyle();
+            this_obj.slide();
         })
+        this.slide();
+    }
 
-        //タッチイベント
-        this.carousel.addEventListener('touchstart',function(e){
-            e.preventDefault();
-            this_obj.startX=e.touches[0].pageX;
-        })
-        this.carousel.addEventListener('touchmove',function(e){
-            e.preventDefault();
-            this_obj.slide(e);
-        },false);
-        this.carousel.addEventListener('touchend',function(e){
-            e.preventDefault();
-            //this_obj.left_now = this_obj.left();
-            if(this_obj.pageChange===true){
-                if(this_obj.direction==='left'){
-                    this_obj.page--;
-                }else{
-                    this_obj.page++;
-                }
-                if(this_obj.page<0){
-                    this_obj.page=0;
-                }else if(this_obj.page>=this_obj.lis.length-1){
-                    this_obj.page=this_obj.lis.length-1;
-                }
+    moveEvent(e){
+        //現在のleft値を取得する
+        let leftNow = -(this.carouselWidth * this.page);
+        let diff = 0;
+        if(e.type==='touchmove'){
+            diff = this.startX - e.changedTouches[0].pageX;
+        }else if(e.type==='mousemove'){
+            diff = this.startX - e.clientX;
+        }
+        if(leftNow-diff <= 0 && leftNow-diff >= (this.lis.length-1)*this.carouselWidth){
+            this.ul.style.left = leftNow - diff+'px';
+        }
+    }
+
+  
+
+    endEvent(e){
+        e.preventDefault();
+        let diff=0;
+        if(e.type==='touchend'){
+            diff = this.startX - e.changedTouches[0].pageX;
+            if(diff > 10){
+                this.page++;
+            }else if(diff<-10){
+                this.page--
             }
-            this_obj.ul.style.transition='left 0.5s';
-            this_obj.ul.style.left = -(this_obj.page*this_obj.px2num(this_obj.carousel.width))+'px';
+        }else if(e.type==='mouseup'){
+            diff = this.startX - e.clientX;
+            if(diff > 10){
+                this.page++;
+            }else if(diff<-10){
+                this.page--
+            }
+        }
+        //現在のページにスライドする
+        this.slide();
+    }
+
+    startEvent(e){
+        e.preventDefault();
+        if(e.type==='touchstart'){
+            this.startX=e.touches[0].pageX;
+        }else if(e.type==='mousedown'){
+            this.startX =e.clientX;
+        }
+    }
+
+
+    slide(){
+        let this_obj = this;
+        if(this.page<0){
+            this.page = 0;
+        }else if (this.page>= this.lis.length){
+            this.page = this.lis.length-1;
+        }
+        this.ul.style.transition = 'left '+this.transitionTime+'s ease';
+        setTimeout(function(){
+            this_obj.ul.style.left = -(this_obj.carouselWidth * this_obj.page)+'px';
             setTimeout(function(){
-                this_obj.ul.style.transition='left 0s';
-            },500);
-            this_obj.left_now = -(this_obj.page*this_obj.px2num(this_obj.carousel.width));
-            this_obj.pageChange=false;
-        })
-    }
-
-
-    left(){
-        return Number(this.ul.style.left.replace('px',''))
-    }
-
-    slide(e){
-        var new_left = this.left_now + (e.changedTouches[0].clientX-this.startX);
-        if(new_left>0){
-            new_left=0;
-        }else if(new_left <  -(this.px2num(this.carousel.width)*(this.lis.length-1))){
-            new_left=-(this.px2num(this.carousel.width)*(this.lis.length-1));
-        }
-        this.ul.style.left = new_left+'px';
-        //方向の取得
-        if(e.changedTouches[0].clientX-this.startX>0){
-            this.direction='left';
-        }else{
-            this.direction='right';
-        }
-        //ページを変更するかどうか
-        if(Math.abs(e.changedTouches[0].clientX-this.startX)>this.px2num(this.carousel.width)*this.pageChangeRatio){
-            this.pageChange=true;
-        }
-    }
-
-
-
-    px2num(str){
-        return Number(str.replace('px',''))
-    }
+            this_obj.ul.style.transition ='left 0s';
+            },this.transitionTime*1000)
+        },100);
+    }    
 
     setStyle(){
-        this.carousel.width = this.carousel.parentNode.clientWidth +'px';
-        this.carousel.style.overflow='hidden';
-        this.ul.style.position='relative';
-        this.ul.style.padding='0';
-        this.ul.style.margin='0';
-        this.ul.style.width = this.carousel.clientWidth*this.lis.length+'px';
-        for(const li of this.lis){
-            li.style.float='left';
-            li.style.width=this.carousel.clientWidth+'px';
-            li.style.listStyle='none';
-            li.style.height=this.height+'px';
-            li.style.backgroundRepeat='no-repeat';
-            li.style.backgroundSize='cover';
-            li.style.backgroundPosition='center';
+        this.setCarouselStyle();
+        this.setUlStyle();
+        this.setLiStyle();
+        this.setAspectRatio();
+    }
+
+    //アスペクト比を設定した場合の高さの再調整
+    setAspectRatio(){
+        if (this.aspectRatio !== null){
+            this.carousel.style.height = this.carouselWidth * this.aspectRatio+10+'px';
+            for(let li of this.lis){
+                li.style.height = this.carouselWidth * this.aspectRatio+'px';
+            }
         }
     }
 
-    
+    //カルーセルのスタイルを指定する
+    setCarouselStyle(){
+        Object.assign(this.carousel.style,{
+            width: this.width,
+            height: this.height,
+            overflow: 'hidden',
+            margin: '0 auto'
+        })
+    }
 
+    //ulのスタイルを指定する
+    setUlStyle(){
+        //親要素の幅をピクセルで取得する
+        this.carouselWidth = this.carousel.clientWidth;
+        Object.assign(this.ul.style,{
+            paddingLeft:0,
+            height: this.height,
+            margin: 0,
+            width: this.lis.length * this.carouselWidth +'px',
+            position:'relative',
+            left:'0px'
+            //transition:'left '+this.transitionTime+'s ease'
+        })
+    }
+    //liのスタイルを指定する
+    setLiStyle(){
+        for(let li of this.lis){
+            Object.assign(li.style,{
+                listStyle:'none',
+                width: this.carouselWidth + 'px',
+                height: this.height,
+                float:'left',
+                backgroundRepeat: 'no-repeat',
+                backgroundSize:this.backgroundSize,
+                backgroundPosition: this.backgroundPosition
+            })
+        }
+    }
+    //基本的なパラメータを定義して代入する
+    basicParameter(){
+        let params ={
+            //カルーセルの基本の高さ設定。ピクセル値を文字列で入力
+            height:'300px',
+            width:'100%',
+            backgroundPosition:'center',
+            backgroundSize:'cover',
+            aspectRatio: null,
+            direction:null,
+            transitionTime:1
+        }
+        this.setObjectParams(params);
+    }
+
+
+    setObjectParams(params){
+        let this_obj = this
+        Object.keys(params).forEach(function(key){
+            //文字列の場合とそうでない場合でevalを分ける
+            if (typeof(params[key]) === 'string'){
+                //文字列型だとしても、数字の場合は強制的に型変換する
+                if(isNaN(params[key])===true){
+                    eval('this_obj.' + key + '=\'' + params[key]+'\'');
+                }else{
+                    eval('this_obj.' + key + '=' + params[key]);
+                }
+            }else{
+                eval('this_obj.' + key + '=' + params[key]);
+            }
+        }) 
+    }
+
+}
+
+
+class NativeCarousel extends NativeSlideStyle{
+    constructor(id,args=new Object){
+        super(id,args);
+    }
 }

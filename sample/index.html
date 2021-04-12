@@ -3,20 +3,70 @@
     <head>
         <meta charset='UTF-8'>
         <meta name="viewport" content="width=device-width,initial-scale=1">
+        <style>
+            body{
+                margin:0;
+            }
+/*
+            span{
+
+  text-shadow    : 
+       2px  2px 1px #003366,
+      -2px  2px 1px #003366,
+       2px -2px 1px #003366,
+      -2px -2px 1px #003366,
+       2px  0px 1px #003366,
+       0px  2px 1px #003366,
+      -2px  0px 1px #003366,
+       0px -2px 1px #003366;   
+}
+*/
+            
+        </style>
         <script src='../native_carousel.js'></script>
         <script>
             window.onload = function(){
-                var nc = new NativeCarousel('native_carousel');
+                var nc = new NativeCarousel('native_carousel',{
+                    height: '200px',
+                    transitionTime: 2
+                });
+
+                var nc2 = new NativeCarousel('native_carousel2',{
+                    backgroundPosition: 'center top'
+                });
+
+                var nc3= new NativeCarousel('native_carousel3',{
+                    backgroundSize:'cover',
+                    aspectRatio:0.5371669
+                });
             }
         </script>
     </head>
     <body>
+        
         <div id='native_carousel'>
             <ul>
-                <li style='background-image:url(./images/1.jpg)'>aaa</li>
-                <li style='background-image:url(./images/2.jpg)'>bbb</li>
-                <li style='background-image:url(./images/3.jpg)'>ccc</li>
+                <li style='background-image:url(./images/1.jpg)'><span color='black'>aaa</span><span color='black'>bbb</span></li>
+                <li style='background-image:url(./images/2.jpg)'><span color='white'>ccc</span><span color='white'>ddd</span></li>
+                <li style='background-image:url(./images/3.jpg)'><span>eee</span><span>fff</span></li>
             </ul>
         </div>
+        
+        <div id='native_carousel2'>
+            <ul>
+                <li style='background-image:url(./images/5.jpg)' bg_position='center'><span color='yellow'>家庭学習に<br>行き詰まったら</span></li>
+                <li style='background-image:url(./images/4.jpg)'><span color='green' font_size='40'>LINEで質問<br>動画で解決！</span></li>
+            </ul>
+        </div>
+
+        <div id='native_carousel3'>
+            <ul>
+                <li style='background-image:url(./images/m1.png'></li>
+                <li style='background-image:url(./images/m2.png'></li>
+                <li style='background-image:url(./images/m3.png'></li>
+                <li style='background-image:url(./images/m4.png'></li>
+            </ul>
+        </div>
+
     </body>
 </html>
