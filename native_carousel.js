@@ -1,8 +1,12 @@
-class NativeSlideStyle{
+class NativeSlideStyleById{
     constructor(id,args=new Object){
         let this_obj = this;
         //対象の要素を取得する
-        this.carousel=document.getElementById(id);
+        if(typeof(id)==='string'){
+            this.carousel=document.getElementById(id);
+        }else if(typeof(id)==='object'){
+            this.carousel=id;
+        }
         //ul要素を取得する
         this.ul = this.carousel.children[0];
         //li要素の一覧を取得する
@@ -14,7 +18,7 @@ class NativeSlideStyle{
 
         
         //基本パラメーターを設定する
-        this.basicParameter();
+        this.setBasicParameter();
         //受け取ったパラメーターがあれば設定する
         this.setObjectParams(args);
 
@@ -65,7 +69,7 @@ class NativeSlideStyle{
         }else if(e.type==='mousemove'){
             diff = this.startX - e.clientX;
         }
-        if(leftNow-diff <= 0 && leftNow-diff >= (this.lis.length-1)*this.carouselWidth){
+        if(leftNow-diff <= 0 && leftNow-diff >= -(this.lis.length-1)*this.carouselWidth){
             this.ul.style.left = leftNow - diff+'px';
         }
     }
@@ -111,13 +115,18 @@ class NativeSlideStyle{
         }else if (this.page>= this.lis.length){
             this.page = this.lis.length-1;
         }
-        this.ul.style.transition = 'left '+this.transitionTime+'s ease';
+        this.ul.style.transition = 'left '+this.transitionTime+'s';
         setTimeout(function(){
             this_obj.ul.style.left = -(this_obj.carouselWidth * this_obj.page)+'px';
+            this_obj.setBlackCircle();
             setTimeout(function(){
-            this_obj.ul.style.transition ='left 0s';
+                this_obj.ul.style.transition ='left 0s';
+                //文字のスライドイン
+                if(this_obj.textFall!==undefined){
+                    this_obj.textFall();
+                }
             },this.transitionTime*1000)
-        },100);
+        },50);
     }    
 
     setStyle(){
@@ -125,6 +134,45 @@ class NativeSlideStyle{
         this.setUlStyle();
         this.setLiStyle();
         this.setAspectRatio();
+        this.setPointer();
+    }
+
+    setBlackCircle(){
+        let pointers = this.carousel.getElementsByTagName('div')[0];
+        let spans = pointers.getElementsByTagName('span');
+        for(var i=0;i<this.lis.length;i++){
+            if(i===this.page){
+                spans[i].innerHTML='&#9679;';
+            }else{
+                spans[i].innerHTML='&#9675;';
+            }
+        }
+    }
+
+    setPointer(){
+        if(this.carousel.getElementsByTagName('div')[0]){
+            this.carousel.getElementsByTagName('div')[0].remove();
+        }
+        let pointers = document.createElement('div');
+        for(let i = 0; i<this.lis.length;i++){
+            let span = document.createElement('span');
+            span.innerHTML='&#9675;';
+            span.style.display='inline-block';
+            span.style.width= 100/this.lis.length + '%';
+            pointers.appendChild(span);
+        }
+        pointers.style.width='30%';
+        pointers.style.fontSize='15px';
+        pointers.style.fontWeight='bold';
+        pointers.style.color=this.pointerColor;
+        pointers.style.height='20px';
+        pointers.style.position='absolute';
+        pointers.style.left ='35%';
+        pointers.style.bottom='20px';
+        pointers.style.textAlign='center';
+        pointers.style.zIndex='10';
+        this.carousel.appendChild(pointers);
+        this.setBlackCircle();
     }
 
     //アスペクト比を設定した場合の高さの再調整
@@ -140,6 +188,7 @@ class NativeSlideStyle{
     //カルーセルのスタイルを指定する
     setCarouselStyle(){
         Object.assign(this.carousel.style,{
+            position: 'relative',
             width: this.width,
             height: this.height,
             overflow: 'hidden',
@@ -158,7 +207,6 @@ class NativeSlideStyle{
             width: this.lis.length * this.carouselWidth +'px',
             position:'relative',
             left:'0px'
-            //transition:'left '+this.transitionTime+'s ease'
         })
     }
     //liのスタイルを指定する
@@ -176,7 +224,7 @@ class NativeSlideStyle{
         }
     }
     //基本的なパラメータを定義して代入する
-    basicParameter(){
+    setBasicParameter(){
         let params ={
             //カルーセルの基本の高さ設定。ピクセル値を文字列で入力
             height:'300px',
@@ -185,7 +233,8 @@ class NativeSlideStyle{
             backgroundSize:'cover',
             aspectRatio: null,
             direction:null,
-            transitionTime:1
+            transitionTime:0.5,
+            pointerColor:'white'
         }
         this.setObjectParams(params);
     }
@@ -211,8 +260,102 @@ class NativeSlideStyle{
 }
 
 
-class NativeCarousel extends NativeSlideStyle{
+class NativeCarouselbyId extends NativeSlideStyleById{
     constructor(id,args=new Object){
         super(id,args);
+        this.setSpanParameter();
+        //受け取ったパラメーターがあれば設定する
+        this.setObjectParams(args);
+        this.setSpanStyle();
+        if(this.autoSlide===true){
+            this.allSlide();
+        }
+    }
+    allSlide(){
+        let this_obj=this;
+        let interval_id;
+        interval_id = setInterval(function(){
+            this_obj.page++;
+            this_obj.slide();
+            if(this_obj.page === this_obj.lis.length-1){
+                clearInterval(interval_id);
+            }
+            console.log('test');
+        },3000)
+    }
+    textFall(){
+        this.spanOut();
+        let spans = this.lis[this.page].getElementsByTagName('span');
+        for(let span of spans){
+            span.style.top='100px';
+        }
+    }
+    spanOut(){
+        for(let li of this.lis){
+            let spans = li.getElementsByTagName('span');
+            for(let span of spans){
+                span.style.top='-100px';
+            }
+        }
+    }
+    setSpanStyle(){
+        for(let li of this.lis){
+            let spans = li.getElementsByTagName('span');
+            for(let span of spans){
+                Object.assign(span.style,{
+                    position:'relative',
+                    top:'-'+this.height,
+                    marginLeft:'10%',
+                    display:'block',
+                    color: this.fontColor,
+                    fontSize: this.fontSize,
+                    transition:'top 1s ease',
+                    transform: 'rotate('+this.rotate+')',
+                    textShadow : "\
+                        2px  2px 1px "+this.textShadowColor+",\
+                        -2px  2px 1px "+this.textShadowColor+",\
+                        2px -2px 1px "+this.textShadowColor+",\
+                        -2px -2px 1px "+this.textShadowColor+",\
+                        2px  0px 1px "+this.textShadowColor+",\
+                        0px  2px 1px "+this.textShadowColor+",\
+                        -2px  0px 1px "+this.textShadowColor+",\
+                        0px -2px 1px "+this.textShadowColor+"\
+                    "
+                });
+            }
+        }
+    }
+    //基本的なパラメータを定義して代入する
+    setSpanParameter(){
+        let params ={
+            fontSize: '40px',
+            textFallTransitionTime:0.5,
+            textShadowColor: 'white',
+            fontColor: 'green',
+            rotate:'-7deg',
+            autoSlide:true
+        }
+        this.setObjectParams(params);
+    }
+}
+
+
+//文字がフォールダウンしてくるカルーセル
+class NativeCarousel{
+    constructor(id,args){
+        var objs = document.querySelectorAll(id);
+        for(let obj of objs){
+            new NativeCarouselbyId(obj,args);
+        }
+    }
+}
+
+//単なる４コマ漫画
+class NativeManga{
+    constructor(id,args){
+        var objs = document.querySelectorAll(id);
+        for(let obj of objs){
+            new NativeSlideStyleById(obj,args);
+        }
     }
 }
