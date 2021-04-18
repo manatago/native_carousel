@@ -116,18 +116,25 @@ class NativeSlideStyleById{
             this.page = this.lis.length-1;
         }
         this.ul.style.transition = 'left '+this.transitionTime+'s';
+ 
+        //setTimeout(function(){
+            this_obj.slideLeftRight();
+        //},0);
+    
+    }
+    
+    slideLeftRight(){
+        let this_obj = this;
+        this.ul.style.left = -(this.carouselWidth * this.page)+'px';
+        this.setBlackCircle();
         setTimeout(function(){
-            this_obj.ul.style.left = -(this_obj.carouselWidth * this_obj.page)+'px';
-            this_obj.setBlackCircle();
-            setTimeout(function(){
-                this_obj.ul.style.transition ='left 0s';
-                //文字のスライドイン
-                if(this_obj.textFall!==undefined){
-                    this_obj.textFall();
-                }
-            },this.transitionTime*1000)
-        },50);
-    }    
+            this_obj.ul.style.transition ='left 0s';
+            //文字のスライドイン
+            if(this_obj.textFall!==undefined){
+                this_obj.textFall();
+            }
+        },this.transitionTime*1000)  
+    }
 
     setStyle(){
         this.setCarouselStyle();
@@ -333,9 +340,15 @@ class NativeCarouselbyId extends NativeSlideStyleById{
             textShadowColor: 'white',
             fontColor: 'green',
             rotate:'-7deg',
-            autoSlide:true
+            autoSlide:false
         }
         this.setObjectParams(params);
+    }
+}
+
+class NativeMangaById extends NativeSlideStyleById{
+    constructor(id,args){
+        super(id,args);
     }
 }
 
@@ -350,12 +363,52 @@ class NativeCarousel{
     }
 }
 
+
+class NativeMangaStyleById{
+    constructor(id,args=new Object){
+        let this_obj = this;
+        //対象の要素を取得する
+        if(typeof(id)==='string'){
+            this.carousel=document.getElementById(id);
+        }else if(typeof(id)==='object'){
+            this.carousel=id;
+        }
+        //ul要素を取得する
+        this.ul = this.carousel.children[0];
+        //li要素の一覧を取得する
+        this.lis = this.ul.children;
+        this.setStyle();
+    }
+
+    setStyle(){
+        this.setCarouselStyle();
+        this.setUlStyle();
+    }
+    setCarouselStyle(){
+        Object.assign(this.carousel.style,{
+            width: '100px'
+        });
+    }
+    setUlStyle(){
+        Object.assign(this.ul.style,{
+            paddding:'0'
+        });
+    }
+
+}
+
 //単なる４コマ漫画
 class NativeManga{
     constructor(id,args){
         var objs = document.querySelectorAll(id);
         for(let obj of objs){
-            new NativeSlideStyleById(obj,args);
+            window.addEventListener('resize',function(){
+                if(window.innerWidth<756){
+                    new NativeMangaById(obj,args);
+                }else{
+                    new NativeMangaStyleById(obj,args);
+                }
+            })
         }
     }
 }
